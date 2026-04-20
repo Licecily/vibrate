@@ -6,7 +6,8 @@ using CairoMakie, LinearAlgebra, SparseArrays
 q̇₀ = 5.0
 q₀ = 1.0
 𝜔 = sqrt(𝑘/𝑚)
-t_fem = 0.0:0.075:8.0  
+Δt = 0.1
+t_fem = 0.0:Δt:8.0  
 nₚ = length(t_fem)
 nₑ = nₚ - 1
 
@@ -104,6 +105,51 @@ x_fem2 = d2[1:nₚ]
 # 绘制FEM2（红色实线）
 lines!(ax, t_fem, x_fem2, color = :red, linewidth=2, label="Hamiltonian Method")
 
+# --------------- 4. 第三段代码：Mixed-FEM方法（绿色实线）---------------
+kᵤᵤ = zeros(nₚ,nₚ)
+kₚₚ = zeros(nₚ,nₚ)
+kᵤₚ = zeros(nₚ,nₚ)
+f = zeros(nₚ)
+
+for i in 1:nₑ
+    t₁ = t_fem[i]
+    t₂ = t_fem[i+1]
+    𝐿 = t₂ - t₁
+
+    kᵤᵤ[i,i] += 𝐿*𝑘/3
+    kᵤᵤ[i,i+1] += 𝐿*𝑘/6
+    kᵤᵤ[i+1,i] += 𝐿*𝑘/6
+    kᵤᵤ[i+1,i+1] += 𝐿*𝑘/3
+    
+    kₚₚ[i,i] += 𝐿/𝑚/3
+    kₚₚ[i,i+1] += 𝐿/𝑚/6
+    kₚₚ[i+1,i] += 𝐿/𝑚/6
+    kₚₚ[i+1,i+1] += 𝐿/𝑚/3
+
+    kᵤₚ[i,i] -= -0.5
+    kᵤₚ[i,i+1] -= -0.5
+    kᵤₚ[i+1,i] -= 0.5
+    kᵤₚ[i+1,i+1] -= 0.5
+end
+
+𝑃₀ = 𝑚*q̇₀
+f[1] += 𝑃₀
+
+k = kᵤᵤ - kᵤₚ*(kₚₚ\kᵤₚ')
+
+α = 1e9   
+kᵅ = zeros(nₚ,nₚ)
+fᵅ = zeros(nₚ)
+kᵅ[1,1] += α
+fᵅ[1] += α*q₀
+kᵝ = zeros(nₚ,nₚ)
+fᵝ = zeros(nₚ)
+kᵝ[nₚ,nₚ] += α
+d3 = [k+kᵅ -k;-k kᵝ]\[fᵅ;-f+fᵝ]
+x_fem3 = d3[1:nₚ]
+
+# 绘制FEM3（红色实线）
+lines!(ax, t_fem, x_fem3, color = :green, linewidth=2, label="Mixed-Hamiltonian Method")
 
 T = 2π/𝜔  
 xlims!(ax, 0, 3*T)  # 限制X轴为2个周期
@@ -112,4 +158,4 @@ axislegend(ax, position = :rt, labelsize=8)
 
 # 保存并显示
 fig
-save("contrast_new_0.075.png", fig)
+save("./contrast—new/contrast_new_$(string(Δt)).png", fig)
