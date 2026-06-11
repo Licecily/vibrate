@@ -6,7 +6,7 @@ using CairoMakie, LinearAlgebra, SparseArrays
 q̇₀ = 5.0
 q₀ = 1.0
 𝜔 = sqrt(𝑘/𝑚)
-Δt = 0.015
+Δt = 0.05
 t_fem = 0.0:Δt:8.0  
 nₚ = length(t_fem)
 nₑ = nₚ - 1
@@ -15,7 +15,7 @@ fig = Figure()
 ax = Axis(fig[1, 1], 
     xlabel = "T", 
     ylabel = "x",
-    title = "Exact + FEM1 + FEM2  (Δt=0.015)")
+    title = "Exact + FEM1 + FEM2  (Δt=0.05)")
 
 # --------------- 1. 精确解（平滑黑色曲线）---------------
 # 用极密网格画完美平滑曲线
@@ -76,7 +76,8 @@ global u_prev, v_prev
     u_prev = u2
     v_prev = v2
 end
-
+x_fem1_dg[1] = q₀
+v_fem1_dg[1] = q̇₀
 # 最终位移结果（与原代码x_fem1完全兼容）
 x_fem1 = x_fem1_dg
 
